@@ -1,14 +1,14 @@
 # features/tfv_interpreter_qa.py (updated)
-from browser_setup import BrowserSetup
-from popup_handling import PopupHandling
-from login import Login
-from calendar_navigation import CalendarNavigation
+from core.browser_setup import BrowserSetup
+from core.popup_handling import PopupHandling
+from core.login import Login
+from core.calendar_navigation import CalendarNavigation
 from features.order_processing import OrderProcessing
 from features.time_settings import TimeSettings
 from features.emg_interpreter import EmergencyInterpreter
 from features.feedback import FeedbackHandler
 from features.schedule_availability import ScheduleAvailability
-from utils import Utils
+from core.utils import Utils
 
 class TFVInterpreterQA:
     def __init__(self):

@@ -1,10 +1,13 @@
 import asyncio
+import os
 from playwright.async_api import Page
 
 class Login:
     def __init__(self, page: Page, base_url: str):
         self.page = page
         self.base_url = base_url
+        self.screenshot_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'screenshots')
+        os.makedirs(self.screenshot_dir, exist_ok=True)
 
     async def login(self, username: str, password: str):
         """Perform login operation with enhanced error handling"""
@@ -69,7 +72,7 @@ class Login:
         except Exception as e:
             print(f"❌ Login failed: {str(e)}")
             print(f"ℹ️ Current URL: {self.page.url}")
-            await self.page.screenshot(path=f"screenshots/login_error_{int(asyncio.get_event_loop().time())}.png")
+            await self.page.screenshot(path=os.path.join(self.screenshot_dir, f"login_error_{int(asyncio.get_event_loop().time())}.png"))
             return False
 
     async def _find_element_from_selectors(self, selectors: list[str], timeout: int = 2000):

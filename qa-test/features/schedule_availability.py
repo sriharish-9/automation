@@ -25,10 +25,10 @@ class ScheduleAvailability:
             
         except PlaywrightTimeoutError:
             print("❌ Profile avatar not found or not clickable")
-            return False
+            raise
         except Exception as e:
             print(f"❌ Error clicking profile avatar: {str(e)}")
-            return False
+            raise
     
     async def click_min_profil_link(self):
         """Click on the 'Min profil' link in the avatar dropdown menu"""
@@ -85,8 +85,8 @@ class ScheduleAvailability:
             
         except Exception as e:
             print(f"❌ Error clicking 'Min profil' link: {str(e)}")
-            return False
-    
+            raise
+
     async def click_schedule_availability_button(self):
         """Click on the 'Schemalagd tillgänglighet' button in settings"""
         try:
@@ -106,10 +106,10 @@ class ScheduleAvailability:
             
         except PlaywrightTimeoutError:
             print("❌ 'Schemalagd tillgänglighet' button not found or not clickable")
-            return False
+            raise
         except Exception as e:
             print(f"❌ Error clicking 'Schemalagd tillgänglighet' button: {str(e)}")
-            return False
+            raise
     
     async def debug_dropdown_menu(self):
         """Debug method to inspect the dropdown menu structure"""
@@ -155,4 +155,4 @@ class ScheduleAvailability:
             
         except Exception as e:
             print(f"❌ Error in schedule availability navigation: {str(e)}")
-            return False
+            raise

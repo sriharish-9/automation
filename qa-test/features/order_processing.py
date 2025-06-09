@@ -1,14 +1,22 @@
 import asyncio
+import os
 from typing import List
 from playwright.async_api import Page
-from models import OrderInfo
-from enums import OrderStatus, CalendarView
-from calendar_navigation import CalendarNavigation
+from core.models import OrderInfo
+from core.enums import OrderStatus, CalendarView
+from core.calendar_navigation import CalendarNavigation
 
 class OrderProcessing:
     def __init__(self, page: Page, calendar_nav: CalendarNavigation):
         self.page = page
         self.calendar_nav = calendar_nav
+        self.screenshot_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../screenshots')
+        os.makedirs(self.screenshot_dir, exist_ok=True)
+
+    async def _screenshot(self, filename: str):
+        path = os.path.join(self.screenshot_dir, filename)
+        await self.page.screenshot(path=path)
+        print(f"📸 Screenshot saved: {path}")
 
     async def find_processing_orders(self, max_weeks: int = 4) -> List[OrderInfo]:
         """Find orders with processing status, checking future weeks if necessary. If actionable orders are found and processed in the first week, do not continue surfing weeks."""
@@ -109,7 +117,7 @@ class OrderProcessing:
             return processing_orders
         except Exception as e:
             print(f"❌ Failed to find processing orders: {str(e)}")
-            return []
+            raise
 
     async def accept_order(self, order_selector: str):
         """Accept an order by clicking it and handling modals"""
@@ -168,7 +176,7 @@ class OrderProcessing:
         except Exception as e:
             print(f"❌ Failed to accept order: {str(e)}")
             await self.page.screenshot(path=f"screenshots/accept_order_error_{int(asyncio.get_event_loop().time())}.png")
-            return False
+            raise
 
     async def reject_order(self, order: str):
         """Reject an order by clicking it and handling modals"""
@@ -228,7 +236,7 @@ class OrderProcessing:
         except Exception as e:
             print(f"❌ Failed to reject order: {str(e)}")
             await self.page.screenshot(path=f"screenshots/reject_order_error_{int(asyncio.get_event_loop().time())}.png")
-            return False
+            raise
 
     async def _handle_confirmation_modal(self, accept: bool):
         """Handle confirmation modals that may appear"""
@@ -283,7 +291,7 @@ class OrderProcessing:
             return False
         except Exception as e:
             print(f"❌ Failed to verify order status change: {str(e)}")
-            return False
+            raise
 
     async def _find_element_from_selectors(self, selectors: list[str], timeout: int = 2000):
         """Helper method to find element from multiple selectors"""
@@ -333,10 +341,10 @@ class OrderProcessing:
                     except:
                         continue
             print("⚠️ Could not navigate to assignments page")
-            return False
+            raise Exception("Could not navigate to assignments page")
         except Exception as e:
             print(f"❌ Assignments navigation failed: {str(e)}")
-            return False
+            raise
 
     async def process_assignments_orders(self):
         """Process (accept first, reject second) orders on the assignments page using the correct selectors and modals."""
@@ -422,7 +430,7 @@ class OrderProcessing:
             return accept_success and reject_success
         except Exception as e:
             print(f"❌ Failed to process assignments orders: {str(e)}")
-            return False
+            raise
 
     async def find_assignments_orders(self):
         """Find actionable orders on the assignments page (with both accept and reject buttons)."""
@@ -434,7 +442,7 @@ class OrderProcessing:
                 empty_para = await self.page.query_selector(empty_state_selector)
                 if empty_para:
                     text = (await empty_para.text_content()) or ""
-                    if "Du har inga aktiva förfrågningar" in text:
+                    if "Du har inga aktiva förfråningar" in text:
                         print("ℹ️ No active assignment requests found (empty state)")
                         return []
             except Exception:
@@ -469,4 +477,4 @@ class OrderProcessing:
             return []
         except Exception as e:
             print(f"❌ Failed to find assignments orders: {str(e)}")
-            return []
+            raise

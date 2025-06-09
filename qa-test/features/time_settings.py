@@ -1,11 +1,20 @@
 # features/time_settings.py
 import asyncio
+import os
 from datetime import datetime, timedelta
 from playwright.async_api import Page
+from core.enums import CalendarView
 
 class TimeSettings:
     def __init__(self, page: Page):
         self.page = page
+        self.screenshot_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../screenshots')
+        os.makedirs(self.screenshot_dir, exist_ok=True)
+
+    async def _screenshot(self, filename: str):
+        path = os.path.join(self.screenshot_dir, filename)
+        await self.page.screenshot(path=path)
+        print(f"📸 Screenshot saved: {path}")
 
     async def navigate_to_availability_modal(self) -> bool:
         """Navigate to the 'Hantera tillgänglighet' modal from the dashboard."""
@@ -18,14 +27,14 @@ class TimeSettings:
             )
             if not availability_button:
                 print("⚠️ 'Hantera tillgänglighet' button not found")
-                await self.page.screenshot(path="screenshots/availability_button_not_found.png")
+                await self._screenshot("availability_button_not_found.png")
                 return False
             is_visible = await availability_button.is_visible()
             is_enabled = await availability_button.is_enabled()
             print(f"ℹ️ Button visible: {is_visible}, enabled: {is_enabled}")
             if not (is_visible and is_enabled):
                 print("⚠️ 'Hantera tillgänglighet' button is not interactable")
-                await self.page.screenshot(path="screenshots/availability_button_not_interactable.png")
+                await self._screenshot("availability_button_not_interactable.png")
                 return False
             # Ensure no modal overlay is intercepting
             await self._ensure_no_modal_overlay()
@@ -33,12 +42,12 @@ class TimeSettings:
             print("✅ Clicked 'Hantera tillgänglighet' button")
             await self.page.wait_for_selector('.tv-modal__container', timeout=10000, state="visible")
             print("✅ Availability modal opened")
-            await self.page.screenshot(path="screenshots/after_open_availability_modal.png")
+            await self._screenshot("after_open_availability_modal.png")
             return True
         except Exception as e:
             print(f"❌ Failed to navigate to availability modal: {str(e)}")
-            await self.page.screenshot(path="screenshots/availability_modal_error.png")
-            return False
+            await self._screenshot("availability_modal_error.png")
+            raise
 
     async def set_date_to_next_day(self) -> bool:
         """Set the date in the datepicker to the next day from today, always using the popup calendar container."""
@@ -48,7 +57,7 @@ class TimeSettings:
             date_input = await self.page.wait_for_selector('input#datenum', timeout=10000, state="visible")
             if not date_input:
                 print("⚠️ Date input field not found")
-                await self.page.screenshot(path="screenshots/date_input_not_found.png")
+                await self._screenshot("date_input_not_found.png")
                 return False
             await date_input.click()
             print("✅ Clicked date input to open calendar")
@@ -57,14 +66,14 @@ class TimeSettings:
             containers = await self.page.query_selector_all('.react-datepicker__month-container')
             if not containers or len(containers) < 1:
                 print("⚠️ No datepicker containers found")
-                await self.page.screenshot(path="screenshots/calendar_container_not_found.png")
+                await self._screenshot("calendar_container_not_found.png")
                 return False
             calendar_container = containers[-1]
             # Find today's date within the popup calendar
             today_element = await calendar_container.query_selector('.react-datepicker__day--today')
             if not today_element:
                 print("⚠️ Today's date element not found in calendar")
-                await self.page.screenshot(path="screenshots/today_not_found.png")
+                await self._screenshot("today_not_found.png")
                 return False
             today_text = await today_element.inner_text()
             today_day = int(today_text.strip())
@@ -84,7 +93,7 @@ class TimeSettings:
                         await next_day_element.evaluate('(el) => el.click()')
                     print(f"✅ Selected next day: {next_day} (current month, popup)")
                     await asyncio.sleep(1)
-                    await self.page.screenshot(path=f"screenshots/after_select_next_day_{next_day}_popup.png")
+                    await self._screenshot(f"after_select_next_day_{next_day}_popup.png")
                     found = True
                     break
             if not found:
@@ -93,7 +102,7 @@ class TimeSettings:
                 next_month_btn = await calendar_container.query_selector('.react-datepicker__navigation--next')
                 if not next_month_btn:
                     print("⚠️ Next month button not found in popup")
-                    await self.page.screenshot(path="screenshots/next_month_button_not_found_popup.png")
+                    await self._screenshot("next_month_button_not_found_popup.png")
                     return False
                 await next_month_btn.click()
                 await asyncio.sleep(1)
@@ -111,20 +120,20 @@ class TimeSettings:
                                 await day.evaluate('(el) => el.click()')
                             print(f"✅ Selected first enabled day in next month (popup): {day_text}")
                             await asyncio.sleep(1)
-                            await self.page.screenshot(path=f"screenshots/after_select_next_month_day_{day_text}_popup.png")
+                            await self._screenshot(f"after_select_next_month_day_{day_text}_popup.png")
                             found = True
                             break
                     except Exception as e:
                         continue
                 if not found:
                     print("⚠️ Could not find enabled day in next month (popup)")
-                    await self.page.screenshot(path="screenshots/next_month_day_not_found_popup.png")
+                    await self._screenshot("next_month_day_not_found_popup.png")
                     return False
             return True
         except Exception as e:
             print(f"❌ Failed to set date to next day: {str(e)}")
-            await self.page.screenshot(path="screenshots/set_next_day_error.png")
-            return False
+            await self._screenshot("set_next_day_error.png")
+            raise
 
     async def set_time(self, field_id: str, target_time: str) -> bool:
         """Set the time for the specified field (Start or Stopp) to the target time (format: HH:MM), scoping to the correct dropdown."""
@@ -134,7 +143,7 @@ class TimeSettings:
             time_input = await self.page.wait_for_selector(f'input#{field_id}', timeout=10000, state="visible")
             if not time_input:
                 print(f"⚠️ {field_id} time input field not found")
-                await self.page.screenshot(path=f"screenshots/{field_id}_input_not_found.png")
+                await self._screenshot(f"{field_id}_input_not_found.png")
                 return False
             # Click on the time input to open the dropdown
             await time_input.click()
@@ -144,13 +153,13 @@ class TimeSettings:
             container = await time_input.evaluate_handle('el => el.closest(".tv-timepicker__container")')
             if not container:
                 print(f"⚠️ Could not find timepicker container for {field_id}")
-                await self.page.screenshot(path=f"screenshots/{field_id}_container_not_found.png")
+                await self._screenshot(f"{field_id}_container_not_found.png")
                 return False
             # Find the visible select panel within this container
             panels = await container.query_selector_all('.tv-timepicker__select-panel')
             if not panels or len(panels) == 0:
                 print(f"⚠️ Time dropdown panel not found for {field_id}")
-                await self.page.screenshot(path=f"screenshots/{field_id}_dropdown_not_found.png")
+                await self._screenshot(f"{field_id}_dropdown_not_found.png")
                 return False
             # Use the first visible panel (should be only one per container)
             dropdown_panel = panels[0]
@@ -164,7 +173,7 @@ class TimeSettings:
                 time_elements = await dropdown_panel.query_selector_all(alt_selector)
                 if not time_elements or len(time_elements) == 0:
                     print(f"⚠️ Time {target_time} not found with alternative selector")
-                    await self.page.screenshot(path=f"screenshots/{field_id}_time_not_found.png")
+                    await self._screenshot(f"{field_id}_time_not_found.png")
                     return False
             # Click on the first matching time element robustly
             time_element = time_elements[0]
@@ -176,12 +185,12 @@ class TimeSettings:
                 await time_element.evaluate('(el) => el.click()')
             print(f"✅ Selected {field_id} time: {target_time}")
             await asyncio.sleep(1)  # Wait for UI update
-            await self.page.screenshot(path=f"screenshots/after_set_{field_id}_time_{target_time}.png")
+            await self._screenshot(f"after_set_{field_id}_time_{target_time}.png")
             return True
         except Exception as e:
             print(f"❌ Failed to set {field_id} time to {target_time}: {str(e)}")
-            await self.page.screenshot(path=f"screenshots/set_{field_id}_time_error.png")
-            return False
+            await self._screenshot(f"set_{field_id}_time_error.png")
+            raise
 
     async def select_availability_option(self, option: str) -> bool:
         """Select the availability option (Tillgänglig or Upptagen)."""
@@ -191,7 +200,7 @@ class TimeSettings:
             button = await self.page.wait_for_selector(button_selector, timeout=10000, state="visible")
             if not button:
                 print(f"⚠️ {option} button not found")
-                await self.page.screenshot(path=f"screenshots/{option}_button_not_found.png")
+                await self._screenshot(f"{option}_button_not_found.png")
                 return False
             
             # Check if button is already selected
@@ -207,12 +216,12 @@ class TimeSettings:
             await button.click()
             print(f"✅ Clicked {option} button")
             await asyncio.sleep(1)  # Wait for UI update
-            await self.page.screenshot(path=f"screenshots/after_select_{option}.png")
+            await self._screenshot(f"after_select_{option}.png")
             return True
         except Exception as e:
             print(f"❌ Failed to select {option}: {str(e)}")
-            await self.page.screenshot(path=f"screenshots/select_{option}_error.png")
-            return False
+            await self._screenshot(f"select_{option}_error.png")
+            raise
 
     async def submit_availability(self) -> bool:
         """Click the 'Lägg till' button to submit the availability setting."""
@@ -224,19 +233,19 @@ class TimeSettings:
             )
             if not submit_button:
                 print("⚠️ 'Lägg till' button not found")
-                await self.page.screenshot(path="screenshots/submit_button_not_found.png")
+                await self._screenshot("submit_button_not_found.png")
                 return False
             
             await submit_button.click()
             print("✅ Clicked 'Lägg till' button")
             await asyncio.sleep(3)  # Wait for modal to process submission
             await self.close_modal()
-            await self.page.screenshot(path="screenshots/after_submit_availability.png")
+            await self._screenshot("after_submit_availability.png")
             return True
         except Exception as e:
             print(f"❌ Failed to submit availability: {str(e)}")
-            await self.page.screenshot(path="screenshots/submit_availability_error.png")
-            return False
+            await self._screenshot("submit_availability_error.png")
+            raise
 
     async def close_modal(self) -> bool:
         """Ensure the availability modal is closed."""
@@ -260,8 +269,8 @@ class TimeSettings:
             return True
         except Exception as e:
             print(f"⚠️ Failed to close modal: {str(e)}")
-            await self.page.screenshot(path="screenshots/close_modal_error.png")
-            return False
+            await self._screenshot("close_modal_error.png")
+            raise
 
     async def _ensure_no_modal_overlay(self):
         """Ensure no modal overlay is intercepting clicks."""

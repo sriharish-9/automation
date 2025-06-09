@@ -1,9 +1,12 @@
 import asyncio
+import os
 from playwright.async_api import Page
 
 class PopupHandling:
     def __init__(self, page: Page):
         self.page = page
+        self.screenshot_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'screenshots')
+        os.makedirs(self.screenshot_dir, exist_ok=True)
 
     async def handle_notification_popup(self):
         """Handle the notification popup that appears after login"""
@@ -264,7 +267,7 @@ class PopupHandling:
             print("🔄 Handling post-login popups...")
             
             # Take a screenshot before handling popups
-            await self.page.screenshot(path="screenshots/before_popup_handling.png")
+            await self.page.screenshot(path=os.path.join(self.screenshot_dir, "before_popup_handling.png"))
             print("📸 Screenshot taken before popup handling")
             
             # Handle notification popup
@@ -272,7 +275,7 @@ class PopupHandling:
             await asyncio.sleep(2)
             
             # Take screenshot after notification popup
-            await self.page.screenshot(path="screenshots/after_notification_popup.png")
+            await self.page.screenshot(path=os.path.join(self.screenshot_dir, "after_notification_popup.png"))
             print("📸 Screenshot taken after notification popup handling")
             
             # Handle welcome modal
@@ -280,7 +283,7 @@ class PopupHandling:
             await asyncio.sleep(2)
             
             # Take final screenshot
-            await self.page.screenshot(path="screenshots/after_all_popups.png")
+            await self.page.screenshot(path=os.path.join(self.screenshot_dir, "after_all_popups.png"))
             print("📸 Screenshot taken after all popup handling")
             
             print("✅ Completed popup handling")
@@ -288,7 +291,7 @@ class PopupHandling:
             
         except Exception as e:
             print(f"❌ Error in popup handling: {str(e)}")
-            await self.page.screenshot(path="screenshots/popup_handling_error.png")
+            await self.page.screenshot(path=os.path.join(self.screenshot_dir, "popup_handling_error.png"))
             return False
 
     async def wait_for_popup_to_disappear(self, selector: str, timeout: int = 10000):

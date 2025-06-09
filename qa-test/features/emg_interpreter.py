@@ -20,21 +20,19 @@ class EmergencyInterpreter:
             toggle = await self.page.wait_for_selector(self.toggle_handle_selector, state="visible", timeout=10000)
             is_enabled = await toggle.is_enabled()
             if not is_enabled:
-                print("⚠️ Toggle is not interactable")
-                return False
+                raise Exception("Toggle is not interactable")
             await toggle.scroll_into_view_if_needed()
             await toggle.click(timeout=10000)
             await asyncio.sleep(1)
             
             # Check for any open modal using the general selector
             is_visible = await self.page.is_visible(self.general_popup_selector)
-            print(f"ℹ️ General popup visible after toggle: {is_visible}")
             if not is_visible:
-                print("⚠️ Popup did not appear after toggle")
+                raise Exception("Popup did not appear after toggle")
             return is_visible
-        except TimeoutError as e:
+        except Exception as e:
             print(f"❌ Toggle failed: {str(e)}")
-            return False
+            raise
         finally:
             await self.page.evaluate("document.body.style.overflow = ''")
 
@@ -46,18 +44,18 @@ class EmergencyInterpreter:
             await self.page.wait_for_selector(time_selector, state="visible", timeout=5000)
             await self.page.click(time_selector)
             return True
-        except TimeoutError:
-            print(f"❌ Failed to set availability time: Timeout")
-            return False
+        except Exception as e:
+            print(f"❌ Failed to set availability time: {str(e)}")
+            raise
 
     async def activate_emergency_interpreter(self):
         """Click the activate button"""
         try:
             await self.page.click(self.activate_button_selector)
             return True
-        except TimeoutError:
-            print(f"❌ Failed to activate interpreter: Timeout")
-            return False
+        except Exception as e:
+            print(f"❌ Failed to activate interpreter: {str(e)}")
+            raise
 
     async def confirm_deactivation(self):
         """Confirm deactivation of emergency interpreter"""
@@ -70,9 +68,9 @@ class EmergencyInterpreter:
                 self.popup_selector, state="hidden", timeout=5000
             )
             return True
-        except TimeoutError as e:
+        except Exception as e:
             print(f"❌ Failed to confirm deactivation: {str(e)}")
-            return False
+            raise
 
     async def is_emergency_active(self):
         """Check if emergency interpreter is active"""
@@ -82,6 +80,6 @@ class EmergencyInterpreter:
             checkbox = await self.page.query_selector('input[id="Gör dig tillgänglig för Akut tolk"]')
             is_checked = await checkbox.evaluate('node => node.checked') if checkbox else False
             return "PÅ" in (toggle_text or "") or is_checked
-        except TimeoutError:
-            print("⚠️ Could not determine emergency interpreter state")
-            return False
+        except Exception as e:
+            print(f"⚠️ Could not determine emergency interpreter state: {str(e)}")
+            raise

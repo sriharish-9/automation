@@ -5,7 +5,7 @@ from playwright.async_api import Page
 class Utils:
     def __init__(self, page: Page):
         self.page = page
-        self.screenshot_dir = "screenshots"
+        self.screenshot_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../screenshots')
         # Create screenshots directory if it doesn't exist
         os.makedirs(self.screenshot_dir, exist_ok=True)
 

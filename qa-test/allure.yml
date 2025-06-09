@@ -1,0 +1,4 @@
+# Example Allure configuration for pytest
+allure:
+  report_dir: allure-results
+  clean: true
