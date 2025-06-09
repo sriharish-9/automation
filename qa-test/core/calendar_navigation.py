@@ -1,6 +1,6 @@
 import asyncio
 from playwright.async_api import Page
-from enums import CalendarView
+from core.enums import CalendarView
 
 class CalendarNavigation:
     def __init__(self, page: Page):

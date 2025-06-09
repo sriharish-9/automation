@@ -8,7 +8,7 @@ class BrowserSetup:
         self.page: Page = None
 
     async def setup_browser(self, headless=False):
-        """Initialize browser and create context with full screen"""
+        """Initialize browser and create context for 1920x1080 at 125% scale (effective 1536x864 viewport)"""
         self.playwright = await async_playwright().start()
         self.browser = await self.playwright.chromium.launch(
             headless=headless,
@@ -16,13 +16,14 @@ class BrowserSetup:
             args=["--window-size=1920,1080"]
         )
 
+        # 1920x1080 at 125% scale = 1536x864 effective viewport
         self.context = await self.browser.new_context(
-            viewport=None,
+            viewport={"width": 1536, "height": 864},
+            device_scale_factor=1.25,
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         )
 
         self.page = await self.context.new_page()
-        await self.page.set_viewport_size({"width": 1920, "height": 1080})
 
         # Optional request/response logging
         self.page.on("request", lambda req: print(f"Request: {req.url}"))

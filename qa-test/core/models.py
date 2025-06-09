@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enums import OrderStatus
+from core.enums import OrderStatus
 
 @dataclass
 class OrderInfo:
